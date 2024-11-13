@@ -10,6 +10,8 @@ class StatusMedicamento(Enum):
     INDISPONIVEL=2
     PI=3
 
+
+
 class Pessoa:
     def __init__(self):
     self.nome_pessoa=nome_pessoa
