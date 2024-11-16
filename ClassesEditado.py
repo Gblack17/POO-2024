@@ -1,6 +1,11 @@
 from enum import Enum
 from datetime import date,datetime,timedelta
-
+import re #É só uma ferramenta pra remover caracteres não numéricos, para validação do cpf.
+dados_pacientes = [
+    ["cpf_pessoa","nome_pessoa","data_nascimento"]
+    ["11111111111", "João Silva", "10/04/1990"],
+    ["22222222222", "Maria Souza", "20/08/1985"],]
+    
 class StatusPrescricao(Enum):
     VÁLIDA=1
     INVÁLIDA=2
@@ -10,14 +15,11 @@ class StatusMedicamento(Enum):
     INDISPONIVEL=2
     PI=3
 
-
-
 class Pessoa:
-    def __init__(self):
-    self.nome_pessoa=nome_pessoa
-    self.cpf_pessoa=cpf_pessoa
-    self.crm_medico=crm_medico
-
+    def __init__(self, nome_pessoa,cpf_paciente,crm_medico):
+        self.nome_pessoa=nome_pessoa
+        self.cpf_pessoa=cpf_pessoa
+        self.crm_medico=crm_medico
 
 class Paciente:
     def __init__(self, nome_paciente):
@@ -43,7 +45,7 @@ class Paciente:
             if prescricao.prazo and prescricao.prazo <hoje and prescricao.status != StatusPrescricao.VÁLIDA:
                 prescricao.status=StatusPrescricao.INVÁLIDA
 
-class prescricao:
+class Prescricao:
     def __init__(self, nome_paciente=None, status=StatusPrescricao.VÁLIDA):
         self.nome_paciente=nome_paciente
         self.nome_medico=nome_medico
@@ -58,7 +60,28 @@ class prescricao:
     def __str__(self):
         data_prescricao_str=self.strftime("%d/%m/%Y") if self else "Sem data."
         return f"Descrição: {self.medicamento}\n Data: {self.data_prescricao}\n Dosagem: {self.dosagem_medicamento}\n Duração: {self.duracao_medicamento}\n Status:{prescricao.status}"
+class Sistema: #Classe do sistema da fármacia, que verifica os dados e retorna para a farmácia
+    def validar_prescricao(self,cpf,crm_medico,nome_paciente,nome_medico,data_nascimento_str):
+        def cpf_valido(cpf_paciente):
+            cpf_paciente=re.sub(r"[^0-9]","",cpf_paciente)#Remove os caracteres não numéricos do cpf
+            if len (cpf_paciente) !=11:  # Verifica se o CPF tem 11 dígitos
+                StatusPrescricao=2
+            elif all(digito == cpf_paciente[0] for digito in cpf_paciente): # Verifica se todos os dígitos são iguais (CPF inválido)
+                StatusPrescricao=2
+        
+        def valida_cpf_nome(cpf,nome_paciente,dados_pacientes=dados_pacientes):
+            cpf_paciente=re.sub(r"[^0-9]", "", cpf)
+            if cpf_paciente and nome_paciente != cpf_paciente and nome_paciente in dados_pacientes:
 
+
+
+
+
+class Farmacia: #classe fármacia, seguindo o diagrama
+    
+
+
+        self.verificacao
 
 def main():
     usuario=Paciente("usuario_padrao", "senha_padrao")
