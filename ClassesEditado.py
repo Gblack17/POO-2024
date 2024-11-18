@@ -1,207 +1,159 @@
 from enum import Enum
-from datetime import date,datetime,timedelta
-import re #É só uma ferramenta pra remover caracteres não numéricos, para validação do cpf.
-dados_pessoa = [
-    ["cpf_pessoa","nome_pessoa","data_nascimento", "crm_pessoa"]
-    ["11111111111", "João Silva", "10/04/1990","Nan"],
-    ["22222222222", "Maria Souza", "20/08/1985","Nan"],
-    ["33333333333", "Chico Buarque", "19/07/1944","345621"]]
-    
-class StatusPrescricao(Enum):
-    VÁLIDA=1
-    INVÁLIDA=2
+from datetime import date, timedelta, datetime
+import re
 
+# Dados iniciais
+dados_pessoa = [
+    {"cpf_pessoa": "12345678910", "nome_pessoa": "João Silva", "data_nascimento": "10/04/1990", "crm_pessoa": None},
+    {"cpf_pessoa": "10987654321", "nome_pessoa": "Maria Souza", "data_nascimento": "20/08/1985", "crm_pessoa": None},
+    {"cpf_pessoa": "112233445566", "nome_pessoa": "Chico Buarque", "data_nascimento": "19/07/1944", "crm_pessoa": "345621"}
+]
+
+class StatusPrescricao(Enum):
+    VÁLIDA = 1
+    INVÁLIDA = 2
 
 class StatusMedicamento(Enum):
-    DISPONÍVEL=1
-    INDISPONÍVEL=2
-    PI=3
-
+    DISPONÍVEL = 1
+    INDISPONÍVEL = 2
 
 class Pessoa:
-    def __init__(self, nome_pessoa,cpf_paciente,crm_medico):
-        self.nome_pessoa=nome_pessoa
-        self.cpf_pessoa=cpf_pessoa
-        self.crm_medico=crm_medico
+    def __init__(self, nome_pessoa, cpf_pessoa, crm_pessoa=None):
+        self.nome_pessoa = nome_pessoa
+        self.cpf_pessoa = cpf_pessoa
+        self.crm_pessoa = crm_pessoa
 
+class Prescricao:
+    def __init__(self, paciente, medicamento, data_prescricao):
+        self.paciente = paciente
+        self.medicamento = medicamento
+        self.data_prescricao = data_prescricao
+        self.status = StatusPrescricao.VÁLIDA
 
-class Paciente:
-    def __init__(self, nome_paciente):
-        Pessoa.nome_pessoa=nome_paciente
-        self.prescricoes=[]
-        Pessoa.cpf_pessoa=cpf_paciente
-        self.data_nascimento=data_nascimento
-
-    def atualizar_status_prescricoes(self):
-        hoje = date.today() 
-
-    def listar_prescricoes(self):
-        for prescricao in self.prescricoes:
-            print(prescricao)
-
-    def remover_prescricao(self, prescricao):
-        if prescricao in self.prescricoes:
-            self.prescricoes.remove(prescricao)
-
-    def atualizar_status_prescricoes(self):
-        hoje=date.today()
-        for prescricao in self.prescricoes:
-            if prescricao.prazo and prescricao.prazo <hoje and prescricao.status != StatusPrescricao.VÁLIDA:
-                prescricao.status=StatusPrescricao.INVÁLIDA
-
-
-class Medicamento: #Criei pra padronizar
+class Medicamento:
     def __init__(self, nome):
         self.nome = nome
-        self.status = StatusMedicamento.INDISPONÍVEL  # Inicialmente indisponível 
+        self.status = StatusMedicamento.INDISPONÍVEL
 
     def __str__(self):
         return f"Medicamento: {self.nome}, Status: {self.status.name}"
 
+class MedicamentoEstoque:
+    def __init__(self, medicamento, quantidade):
+        self.medicamento = medicamento
+        self.quantidade = quantidade
 
-class Prescricao:
-    def __init__(self, nome_paciente=None, status=StatusPrescricao.VÁLIDA):
-        self.nome_paciente=nome_paciente
-        self.nome_medico=nome_medico
-        self.status=status
-        self.data_prescricao=data_prescricao
-        self.medicamento=medicamento
-        self.dosagem_medicamento=dosagem_medicamento
-        self.duracao_medicamento=duracao_medicamento
+class Farmacia:
+    def __init__(self, estoque):
+        self.estoque = estoque
 
-    def marcar_como_VÁLIDA(self, prescricao):
-        prescricao.status=StatusPrescricao.VÁLIDA
+    def verificar_estoque(self, medicamento_nome):
+        for item in self.estoque:
+            if item.medicamento.nome == medicamento_nome:
+                return item
+        return None
 
-    def __str__(self):
-        data_prescricao_str=self.strftime("%d/%m/%Y") if self else "Sem data."
-        return f"Descrição: {self.medicamento}\n Data: {self.data_prescricao}\n Dosagem: {self.dosagem_medicamento}\n Duração: {self.duracao_medicamento}\n Status:{prescricao.status}"
+    def vender_medicamento(self, prescricao):
+        if prescricao.status != StatusPrescricao.VÁLIDA:
+            print("Prescrição inválida. Não é possível dispensar o medicamento.")
+            return
 
+        item_estoque = self.verificar_estoque(prescricao.medicamento.nome)
+        if not item_estoque or item_estoque.quantidade == 0:
+            print("Medicamento indisponível no estoque.")
+        else:
+            item_estoque.quantidade -= 1
+            print(f"Medicamento {prescricao.medicamento.nome} dispensado. Estoque atualizado.")
 
-class Sistema: #Classe do sistema da fármacia, que verifica os dados e retorna para a farmácia
-    def validar_prescricao(self,cpf,crm_medico,nome_paciente,nome_medico,data_nascimento_str):
-        def cpf_valido(cpf_paciente):
-            cpf_paciente=re.sub(r"[^0-9]","",cpf_paciente)#Remove os caracteres não numéricos do cpf
-            if len (cpf_paciente) !=11:  # Verifica se o CPF tem 11 dígitos
-                prescricao.status=StatusPrescricao.VÁLIDA
-            elif all(digito == cpf_paciente[0] for digito in cpf_paciente): # Verifica se todos os dígitos são iguais a 0(CPF inválido)
-                prescricao.status=StatusPrescricao.VÁLIDA
+# Validações
+def validar_cpf(cpf):
+    cpf = re.sub(r"\D", "", cpf)
+    if len(cpf) != 11 or cpf == cpf[0] * 11:
+        return False
+    return True
 
-        def valida_cpf_nome(cpf_pessoa,nome_pessoa,dados_pessoa=dados_pacientes):
-            cpf_paciente=re.sub(r"[^0-9]", "", cpf_pessoa)
-            if cpf_pessoa in dados_pessoa and dados_pessoa[cpf_pessoa][nome_pessoa]==nome_paciente: #Verifica se o cpf ta no banco de dados nacional(em tese) e verifica se o cpf está atrelado ao mesmo nome da pessoa da prescrição
-                prescricao.status=StatusPrescricao.VÁLIDA
-            else:
-                prescricao.status=StatusPrescricao.INVÁLIDA
+def validar_prescricao(prescricao, dados_pessoa):
+    """
+    Valida a prescrição:
+    - Verifica se o CPF e o nome do paciente correspondem aos registros.
+    - Verifica se a data da prescrição está dentro do prazo permitido (30 dias).
+    """
+    # Verifica se o CPF e o nome correspondem
+    for pessoa in dados_pessoa:
+        if pessoa["cpf_pessoa"] == prescricao.paciente.cpf_pessoa and pessoa["nome_pessoa"] == prescricao.paciente.nome_pessoa:
+            break
+    else:
+        prescricao.status = StatusPrescricao.INVÁLIDA
+        print("CPF ou nome do paciente não correspondem aos dados registrados.")
+        return False
 
-        def valida_crm(nome_pessoa,dados_pessoa=dados_pessoa):
-            if dados_pessoa[crm_medico][nome_pessoa]==nome_medico: #Verifica se o crm que está no banco de dados está atrelado ao mesmo nome do medico da prescrição.
-                prescricao.status=StatusPrescricao.VÁLIDA
-            else:
-                prescricao.status=StatusPrescricao.INVÁLIDA
+    # Verifica se a data está dentro do prazo
+    hoje = date.today()
+    limite_inferior = hoje - timedelta(days=30)  # Limite de 30 dias atrás
+    if not (limite_inferior <= prescricao.data_prescricao <= hoje):
+        prescricao.status = StatusPrescricao.INVÁLIDA
+        print(f"Prescrição fora do período válido. Só são aceitas prescrições entre {limite_inferior} e {hoje}.")
+        return False
 
-        def valida_data(data_prescricao_str,data_limite):
-            data_limite= hoje + timedelta(days=30)
-            if prescricao.data_prescricao<=data_limite and prescricao.data_prescricao>=hoje: #Verificação do intervalo permitido
-                prescricao.status=StatusPrescricao.VÁLIDA
-            else:
-                prescricao.status=StatusPrescricao.VÁLIDA
+    return True
 
+# Estoque inicial
+estoque = [
+    MedicamentoEstoque(Medicamento("Dipirona"), 50),
+    MedicamentoEstoque(Medicamento("Azitromicina"), 10)
+]
 
-class MedicamentoEstoque:#O sistema do estoque para verificar se o medicamento tem disponível e se sim, dar baixa no mesmo
-    def __init__(self,medicamento,marca,quantidade,lote,validade):
-        self.medicamento=medicamento
-        self.marca=marca
-        self.quantidade=quantidade
-        self.lote=lote
-        self.validade=validade
-
-    estoque=[#O banco de dados dos medicamentos, pra termos já algo
-        MedicamentoEstoque(Medicamento("Dipirona"),"Genérico",50,"202401","03/2030"),
-        MedicamentoEstoque(Medicamento("Azitromicina"),"Zitrex",10,"202201","03/2028")]
-
-    def verifica_estoque(nome_medicamento,estoque_medicamento=estoque):
-        for item in estoque_medicamento: #itera o estoque
-            if item.Medicamento.nome==nome_medicamento: #procura pelo nome do medicamento passado por parâmetro
-                if item.Quantidade>0:
-                    item.Medicamento.status=StatusMedicamento.DISPONIVEL
-                    return True
-                else:
-                    item.Medicamento.status=StatusMedicamento.INDISPONIVEL
-                    return False
-                return False
-
-
-class Farmacia: #classe fármacia, seguindo o diagrama
-    def __init__(self,estoque):
-        self.estoque=estoque
-    
-    def vender_medicamento(self,prescricao):
-        if prescricao.status!=StatusPrescricao.VÁLIDA:
-            medicamento.status=StatusMedicamento.PI
-            return "Prescrição Inválida"
-    
-        for item_estoque in self.estoque: # Dar baixa no estoque  (se disponível)
-            if item_estoque.medicamento.nome == prescricao.medicamento.nome: #procurando pelo medicamento.nome na lista
-                if  item_estoque.quantidade > 0:
-                    item_estoque.quantidade -= 1
-                    print("Medicamento vendido e baixa no estoque realizada.")
-                    return True
-                else:
-                    item_estoque.medicamento.status =  StatusMedicamento.INDISPONIVEL
-                    print(f"Medicamento {prescricao.medicamento.nome} sem estoque.")
-                    return f"Medicamento {prescricao.medicamento.nome} sem estoque."
-                break
-            return f"Medicamento {prescricao.medicamento.nome} não encontrado no estoque."
-
-        def verificar_estoque_e_atualizar_status(self, nome_medicamento):
-          return verifica_estoque(nome_medicamento, self.estoque)
-
+# Main
 def main():
-    usuario=Paciente("usuario_padrao", "senha_padrao")
+    farmacia = Farmacia(estoque)
 
+    print("Bem-vindo ao sistema de dispensação de medicamentos!")
     while True:
-        print("\nEscolha uma ação:\n 1. Apresentar prescrição\n 2. Listar prescrições\n 3. Remover prescrição\n 4. Sair")
+        print("\nEscolha uma ação:")
+        print("1. Apresentar prescrição")
+        print("2. Sair")
 
-        escolha=input("> ")
+        escolha = input("> ")
 
-        if escolha == '1':
-            nome_paciente=input("Nome do Medicamento da Prescrição: ")
-            while True:
-                try:
-                    
+        if escolha == "1":
+            # Entrada dos dados da prescrição
+            nome_paciente = input("Nome do paciente: ")
+            cpf_paciente = input("CPF do paciente: ")
+            medicamento_nome = input("Nome do medicamento: ")
+            data_prescricao_str = input("Data da prescrição (DD/MM/AAAA): ")
 
-        elif escolha=='2':
-            usuario.listar_prescricoes()
+            # Validação de entrada
+            try:
+                data_prescricao = datetime.strptime(data_prescricao_str, "%d/%m/%Y").date()
+            except ValueError:
+                print("Data inválida. Use o formato DD/MM/AAAA.")
+                continue
 
-        elif escolha=='3':
-            nome_paciente=input("digite o Título da prescricao a ser marcada como feita")
-            for prescricao in usuario.prescricoes:
-                if prescricao.nome_paciente==nome_paciente:
-                    usuario.marcar_como_VÁLIDA(prescricao)
-                    break
-    
-        elif escolha=='4':
-            nome_paciente=input("digite o Título da prescricao a ser marcada como fazendo: ")
-            for prescricao in usuario.prescricoes:
-                if prescricao.nome_paciente==nome_paciente:
-                    usuario.marcar_como_fazendo(prescricao)
-                    break
+            if not validar_cpf(cpf_paciente):
+                print("CPF inválido. Verifique os dados e tente novamente.")
+                continue
 
-        elif escolha=='5':
-            usuario.atualizar_status_prescricoes()
-    
-        elif escolha=='6':
-            nome_paciente=input("digite o Título da prescricao a ser removida: ")
-            for prescricao in usuario.prescricoes:
-                if prescricao.nome_paciente==nome_paciente:
-                    usuario.remover_prescricao(prescricao)
-                    break
-            
-        elif escolha=='7':
+            paciente = Pessoa(nome_paciente, cpf_paciente)
+            medicamento = Medicamento(medicamento_nome)
+            prescricao = Prescricao(paciente, medicamento, data_prescricao)
+
+            # Validação da prescrição
+            if validar_prescricao(prescricao, dados_pessoa):
+                print("Prescrição válida. Verificando estoque...")
+                item_estoque = farmacia.verificar_estoque(medicamento_nome)
+                if item_estoque and item_estoque.quantidade > 0:
+                    farmacia.vender_medicamento(prescricao)
+                else:
+                    print("Medicamento indisponível no estoque.")
+            else:
+                print("Prescrição inválida.")
+
+        elif escolha == "2":
+            print("Saindo do sistema. Até logo!")
             break
 
         else:
-            print("Opção inválida.")
+            print("Opção inválida. Tente novamente.")
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
